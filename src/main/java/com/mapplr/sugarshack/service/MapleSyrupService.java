@@ -23,7 +23,7 @@ public class MapleSyrupService {
     public List<MapleSyrupDto> getAllMapleSyrups(String type) {
         List<MapleSyrup> mapleSyrups = type == null ?
                 mapleSyrupRepository.findAll() :
-                mapleSyrupRepository.findByTypeDeletedFalse(SyrupType.valueOf(type))
+                mapleSyrupRepository.findByTypeAndDeletedFalse(SyrupType.valueOf(type))
                         .orElseThrow(() -> new ResourceNotFoundException("Maple Syrup product not found for type" + type));
 
         return mapleSyrups.stream()
