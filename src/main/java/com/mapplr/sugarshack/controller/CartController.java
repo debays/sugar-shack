@@ -1,7 +1,7 @@
 package com.mapplr.sugarshack.controller;
 
 import com.mapplr.sugarshack.dto.CartDto;
-import com.mapplr.sugarshack.dto.CartItemDto;
+import com.mapplr.sugarshack.dto.OrderLineDto;
 import com.mapplr.sugarshack.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,7 +20,7 @@ public class CartController {
     private CartService cartService;
 
     @GetMapping("/{id}")
-    public List<CartItemDto> getCart(@PathVariable Long id) {
+    public List<OrderLineDto> getCart(@PathVariable Long id) {
         return cartService.getCart(id);
     }
 

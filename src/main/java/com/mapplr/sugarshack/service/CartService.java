@@ -2,7 +2,7 @@ package com.mapplr.sugarshack.service;
 
 
 import com.mapplr.sugarshack.dto.CartDto;
-import com.mapplr.sugarshack.dto.CartItemDto;
+import com.mapplr.sugarshack.dto.OrderLineDto;
 import com.mapplr.sugarshack.dto.mapper.CartItemMapper;
 import com.mapplr.sugarshack.dto.mapper.CartMapper;
 import com.mapplr.sugarshack.model.Cart;
@@ -15,14 +15,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.persistence.EntityNotFoundException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CartService {
@@ -37,7 +34,7 @@ public class CartService {
     @Autowired
     private SyrupRepository syrupRepository;
 
-    public List<CartItemDto> getCart(Long id) {
+    public List<OrderLineDto> getCart(Long id) {
         Cart cart = cartRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
         return CartItemMapper.listEntityToListDto(cart.getItems());
     }

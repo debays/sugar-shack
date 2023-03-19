@@ -11,7 +11,7 @@ public class MapleSyrupMapper {
 
     public static MapleSyrupDto entityToDto(MapleSyrup mapleSyrup){
         MapleSyrupDto mapleSyrupDTO = new MapleSyrupDto();
-        mapleSyrupDTO.setId(mapleSyrup.getId());
+        mapleSyrupDTO.setId(mapleSyrup.getId().toString());
         mapleSyrupDTO.setType(mapleSyrup.getType());
         mapleSyrupDTO.setName(mapleSyrup.getName());
         mapleSyrupDTO.setPrice(mapleSyrup.getPrice());

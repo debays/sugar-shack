@@ -6,12 +6,12 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class MapleSyrupDto {
-    private String description;
+public class CatalogueItemDto {
     private String id;
     private String image;
+    private int maxQty;
     private String name;
     private double price;
-    private int stock;
     private SyrupType type;
 }
+

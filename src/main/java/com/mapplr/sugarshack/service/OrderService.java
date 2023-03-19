@@ -2,7 +2,10 @@ package com.mapplr.sugarshack.service;
 
 import com.mapplr.sugarshack.dto.OrderDto;
 import com.mapplr.sugarshack.dto.OrderItemDto;
+import com.mapplr.sugarshack.dto.OrderLineDto;
+import com.mapplr.sugarshack.dto.OrderValidationResponseDto;
 import com.mapplr.sugarshack.dto.mapper.OrderMapper;
+import com.mapplr.sugarshack.model.MapleSyrup;
 import com.mapplr.sugarshack.model.Order;
 import com.mapplr.sugarshack.model.OrderItem;
 import com.mapplr.sugarshack.model.OrderStatus;
@@ -14,6 +17,8 @@ import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.Principal;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +45,41 @@ public class OrderService {
         orderRepository.save(order);
 
         return OrderMapper.entityToDto(order);
+    }
+
+
+    @Transactional
+    public OrderValidationResponseDto placeOrder(List<OrderLineDto> orderLineDtoList, Principal principal) {
+        Order order = new Order();
+        order.setOrderDate(ZonedDateTime.now());
+        order.setCustomerName(principal.getName());
+
+        List<OrderItem> orderItems = new ArrayList<>();
+        double totalPrice = 0.0;
+
+        for (OrderLineDto orderLineDto : orderLineDtoList) {
+            MapleSyrup mapleSyrup = syrupRepository.findById(Long.parseLong(orderLineDto.getProductId()))
+                    .orElseThrow(() -> new RuntimeException("Maple Syrup not found with id: " + orderLineDto.getProductId()));
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setMapleSyrup(mapleSyrup);
+            orderItem.setQuantity(orderLineDto.getQty());
+            orderItem.setOrder(order);
+
+            orderItems.add(orderItem);
+            totalPrice += mapleSyrup.getPrice() * orderLineDto.getQty();
+        }
+
+        order.setOrderItems(orderItems);
+        order.setTotalPrice(totalPrice);
+
+        orderRepository.save(order);
+
+        OrderValidationResponseDto responseDto = new OrderValidationResponseDto();
+        responseDto.setOrderValid(true);
+        responseDto.setErrors(null);
+
+        return responseDto;
     }
 
     private Order createNewOrder(OrderDto orderDto) {
