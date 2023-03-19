@@ -13,6 +13,8 @@ public class MapleSyrup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Boolean deleted;
+
     private SyrupType type;
     private String name;
     private String description;

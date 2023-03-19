@@ -14,11 +14,15 @@ public class CartItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    private Boolean deleted;
+
     @ManyToOne
     @JoinColumn(name = "maple_syrup_id")
     private MapleSyrup mapleSyrup;
 
     private Integer quantity;
+
+    private Double price;
 
     @ManyToOne
     @JoinColumn(name = "cart_id")

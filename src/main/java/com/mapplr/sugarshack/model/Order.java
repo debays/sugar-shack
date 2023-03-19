@@ -17,6 +17,8 @@ public class Order {
     private Long id;
     private ZonedDateTime orderDate;
 
+    private Boolean deleted;
+
     // TODO : Could be an entity "User" or "Customer"
     private String customerName;
     private String customerAddress;
@@ -27,4 +29,6 @@ public class Order {
     private List<OrderItem> orderItems;
 
     private OrderStatus orderStatus;
+
+    private double totalPrice;
 }
