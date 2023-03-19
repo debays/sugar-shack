@@ -24,4 +24,6 @@ public class Cart {
     private ZonedDateTime createdAt;
 
     private Double totalPrice;
+
+    private String username;
 }

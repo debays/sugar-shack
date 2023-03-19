@@ -4,29 +4,39 @@ import com.mapplr.sugarshack.dto.CartDto;
 import com.mapplr.sugarshack.dto.CartItemDto;
 import com.mapplr.sugarshack.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+import java.util.List;
+
 
 @RestController
-@RequestMapping("/carts")
+@RequestMapping("/cart")
 public class CartController {
+
     @Autowired
     private CartService cartService;
 
     @GetMapping("/{id}")
-    public CartDto getCart(@PathVariable Long id) {
+    public List<CartItemDto> getCart(@PathVariable Long id) {
         return cartService.getCart(id);
     }
 
-    @PostMapping
-    public CartDto addItemToCart(@RequestBody CartItemDto item) {
-        return cartService.addItemToCart(item);
+    @PutMapping("/addToCart")
+    public ResponseEntity<CartDto> addToCart(@RequestParam("productId") String productId, Principal principal) {
+        return new ResponseEntity<>(cartService.addItemToCart(productId, principal), HttpStatus.ACCEPTED);
     }
 
-    @PostMapping
-    public CartDto removeProductFromCart(@RequestBody CartItemDto item) {
-        return cartService.removeProductFromCart(item);
+    @DeleteMapping()
+    public ResponseEntity<CartDto> removeFromCart(@RequestParam String productId, Principal principal) {
+        return new ResponseEntity<>(cartService.removeFromCart(productId, principal), HttpStatus.ACCEPTED);
+    }
+
+    @PostMapping("/changeQty")
+    public ResponseEntity<CartDto> changeQuantity(@RequestParam String productId, @RequestParam int newQty) {
+        return new ResponseEntity<>(cartService.changeQuantity(productId, newQty), HttpStatus.ACCEPTED);
     }
 
     @DeleteMapping("/{id}")

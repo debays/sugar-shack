@@ -1,5 +1,6 @@
-package com.mapplr.sugarshack.dto;
+package com.mapplr.sugarshack.dto.mapper;
 
+import com.mapplr.sugarshack.dto.CartDto;
 import com.mapplr.sugarshack.model.Cart;
 
 public class CartMapper {

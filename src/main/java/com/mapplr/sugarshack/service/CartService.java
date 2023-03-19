@@ -3,7 +3,8 @@ package com.mapplr.sugarshack.service;
 
 import com.mapplr.sugarshack.dto.CartDto;
 import com.mapplr.sugarshack.dto.CartItemDto;
-import com.mapplr.sugarshack.dto.CartMapper;
+import com.mapplr.sugarshack.dto.mapper.CartItemMapper;
+import com.mapplr.sugarshack.dto.mapper.CartMapper;
 import com.mapplr.sugarshack.model.Cart;
 import com.mapplr.sugarshack.model.CartItem;
 import com.mapplr.sugarshack.model.MapleSyrup;
@@ -14,10 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.persistence.EntityNotFoundException;
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class CartService {
@@ -32,46 +37,112 @@ public class CartService {
     @Autowired
     private SyrupRepository syrupRepository;
 
-    public CartDto getCart(Long id) {
+    public List<CartItemDto> getCart(Long id) {
         Cart cart = cartRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
-        return CartMapper.entityToDto(cart);
+        return CartItemMapper.listEntityToListDto(cart.getItems());
     }
 
     @Transactional
-    public CartDto addItemToCart(CartItemDto itemDTO) {
-        MapleSyrup mapleSyrup = syrupRepository.findByIdAndDeletedFalse(itemDTO.getMapleSyrupDto().getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Maple syrup not found"));
+    public CartDto addItemToCart(String productId, Principal principal) {
+        // find the MapleSyrup entity for the given product ID
+        MapleSyrup mapleSyrup = syrupRepository.findById(Long.valueOf(productId))
+                .orElseThrow(() -> new EntityNotFoundException("MapleSyrup not found with ID: " + productId));
 
-        CartItem cartItem = cartItemRepository.findByIdAndDeletedFalse(itemDTO.getId())
-                .orElseGet(() -> getNewCartItem(itemDTO, mapleSyrup));
+        // find the Cart entity for the user (or create a new one if it doesn't exist yet)
+        Cart cart = cartRepository.findActiveCart(principal.getName())
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setCreatedAt(ZonedDateTime.now());
+                    return cartRepository.save(newCart);
+                });
 
-        Cart cart = cartRepository.findByIdAndDeletedFalse(itemDTO.getCartDto().getId())
-                .orElseGet(this::getNewCart);
+        // find the CartItem entity for the MapleSyrup and Cart (or create a new one if it doesn't exist yet)
+        CartItem cartItem = cartItemRepository.findByCartAndMapleSyrupAndDeletedFalse(cart, mapleSyrup)
+                .orElseGet(() -> {
+                    CartItem newCartItem = new CartItem();
+                    newCartItem.setCart(cart);
+                    newCartItem.setMapleSyrup(mapleSyrup);
+                    newCartItem.setQuantity(0);
+                    newCartItem.setPrice(mapleSyrup.getPrice());
+                    return cartItemRepository.save(newCartItem);
+                });
 
-        updateCartForAddItem(cartItem, cart);
+        // increment the quantity and price of the CartItem
+        cartItem.setQuantity(cartItem.getQuantity() + 1);
+        cartItem.setPrice(cartItem.getQuantity() * mapleSyrup.getPrice());
+
+        // update the total price of the Cart
+        cart.setTotalPrice(cart.getItems().stream().mapToDouble(CartItem::getPrice).sum());
+
+        // save the updated Cart and CartItem entities
         cartRepository.save(cart);
+        cartItemRepository.save(cartItem);
 
         return CartMapper.entityToDto(cart);
     }
 
     @Transactional
-    public CartDto removeProductFromCart(CartItemDto itemDTO) {
-        CartItem cartItem = cartItemRepository.findByIdAndDeletedFalse(itemDTO.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Cart item not found"));
+    public CartDto removeFromCart(String productId, Principal principal) {
+        // find the MapleSyrup entity for the given product ID
+        MapleSyrup mapleSyrup = syrupRepository.findById(Long.valueOf(productId))
+                .orElseThrow(() -> new EntityNotFoundException("MapleSyrup not found with ID: " + productId));
 
+        // find the Cart entity for the user
+        Cart cart = cartRepository.findActiveCart(principal.getName())
+                .orElseThrow(() -> new EntityNotFoundException("Cart not found for active user"));
+
+        // find the CartItem entity for the MapleSyrup and Cart
+        CartItem cartItem = cartItemRepository.findByCartAndMapleSyrupAndDeletedFalse(cart, mapleSyrup)
+                .orElseThrow(() -> new EntityNotFoundException("CartItem not found for Cart and MapleSyrup"));
+
+        // decrement the quantity and price of the CartItem
+        cartItem.setQuantity(cartItem.getQuantity() - 1);
+        cartItem.setPrice(cartItem.getQuantity() * mapleSyrup.getPrice());
+
+        // if the quantity is now zero, remove the CartItem from the Cart
+        if (cartItem.getQuantity() == 0) {
+            cart.getItems().remove(cartItem);
+            cartItemRepository.delete(cartItem);
+        }
+
+        // update the total price of the Cart
+        cart.setTotalPrice(cart.getItems().stream().mapToDouble(CartItem::getPrice).sum());
+
+        // save the updated Cart and CartItem entities
+        cartRepository.save(cart);
+        return CartMapper.entityToDto(cart);
+    }
+
+    @Transactional
+    public CartDto changeQuantity(String productId, int newQty) {
+        // Find the CartItem by productId
+        CartItem cartItem = cartRepository.findCartItemByProductId(Long.valueOf(productId))
+                .orElseThrow(() -> new ResourceNotFoundException("CartItem not found for productId: " + productId));
+
+        // Update the CartItem quantity and price
+        cartItem.setQuantity(newQty);
+        cartItem.setPrice(cartItem.getMapleSyrup().getPrice() * newQty);
+
+        // Recalculate and update the Cart total price
         Cart cart = cartItem.getCart();
-        cart.getItems().remove(cartItem);
-        cart.setTotalPrice(cart.getTotalPrice() - (cartItem.getPrice() * itemDTO.getQuantity()));
-        cartRepository.save(cart);
+        List<CartItem> cartItems = cart.getItems();
+        Double totalPrice = cartItems.stream()
+                .mapToDouble(ci -> ci.getPrice())
+                .sum();
+        cart.setTotalPrice(totalPrice);
 
-        cartItemRepository.delete(cartItem);
+        // Save the updated entities
+        cartRepository.save(cart);
+        cartItemRepository.save(cartItem);
 
         return CartMapper.entityToDto(cart);
     }
 
+
     @Transactional
-    public CartDto deleteCart(Long cartId){
-        Cart cart = cartRepository.findByIdAndDeletedFalse(cartId).orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+    public CartDto deleteCart(Long cartId) {
+        Cart cart = cartRepository.findByIdAndDeletedFalse(cartId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
 
         for (CartItem item : cart.getItems()) {
             cartItemRepository.delete(item);
@@ -79,32 +150,5 @@ public class CartService {
 
         cartRepository.delete(cart);
         return CartMapper.entityToDto(cart);
-    }
-
-    private void updateCartForAddItem(CartItem cartItem, Cart cart) {
-        Double actualPrice = cart.getTotalPrice();
-        actualPrice += cartItem.getPrice();
-        cart.setTotalPrice(actualPrice);
-        List<CartItem> items = cart.getItems();
-        items.add(cartItem);
-        cart.setItems(items);
-    }
-
-    private CartItem getNewCartItem(CartItemDto itemDTO, MapleSyrup mapleSyrup) {
-        CartItem newCartItem = new CartItem();
-        newCartItem.setQuantity(itemDTO.getQuantity());
-        newCartItem.setMapleSyrup(mapleSyrup);
-        newCartItem.setPrice(itemDTO.getPrice() * itemDTO.getQuantity());
-        cartItemRepository.save(newCartItem);
-        return newCartItem;
-    }
-
-    private Cart getNewCart() {
-        Cart newCart = new Cart();
-        newCart.setCreatedAt(ZonedDateTime.now());
-        newCart.setItems(new ArrayList<>());
-        newCart.setTotalPrice(0D);
-        cartRepository.save(newCart);
-        return newCart;
     }
 }

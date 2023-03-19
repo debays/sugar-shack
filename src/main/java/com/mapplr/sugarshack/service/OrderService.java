@@ -2,7 +2,7 @@ package com.mapplr.sugarshack.service;
 
 import com.mapplr.sugarshack.dto.OrderDto;
 import com.mapplr.sugarshack.dto.OrderItemDto;
-import com.mapplr.sugarshack.dto.OrderMapper;
+import com.mapplr.sugarshack.dto.mapper.OrderMapper;
 import com.mapplr.sugarshack.model.Order;
 import com.mapplr.sugarshack.model.OrderItem;
 import com.mapplr.sugarshack.model.OrderStatus;

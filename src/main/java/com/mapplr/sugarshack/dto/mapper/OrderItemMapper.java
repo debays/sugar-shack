@@ -1,9 +1,8 @@
-package com.mapplr.sugarshack.dto;
+package com.mapplr.sugarshack.dto.mapper;
 
-import com.mapplr.sugarshack.model.Order;
+import com.mapplr.sugarshack.dto.OrderItemDto;
 import com.mapplr.sugarshack.model.OrderItem;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 

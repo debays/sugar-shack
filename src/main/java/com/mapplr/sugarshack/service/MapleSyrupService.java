@@ -1,7 +1,7 @@
 package com.mapplr.sugarshack.service;
 
 import com.mapplr.sugarshack.dto.MapleSyrupDto;
-import com.mapplr.sugarshack.dto.MapleSyrupMapper;
+import com.mapplr.sugarshack.dto.mapper.MapleSyrupMapper;
 import com.mapplr.sugarshack.model.MapleSyrup;
 import com.mapplr.sugarshack.repository.SyrupRepository;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
