@@ -3,6 +3,9 @@ package com.mapplr.sugarshack.dto.mapper;
 import com.mapplr.sugarshack.dto.MapleSyrupDto;
 import com.mapplr.sugarshack.model.MapleSyrup;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MapleSyrupMapper {
 
     public MapleSyrup dtoToEntity(MapleSyrupDto mapleSyrupDto){
@@ -18,4 +21,13 @@ public class MapleSyrupMapper {
         mapleSyrupDTO.setStock(mapleSyrup.getStock());
         return mapleSyrupDTO;
     }
+
+    public static List<MapleSyrupDto> listToDto(List<MapleSyrup> mapleSyrup){
+        List<MapleSyrupDto> mapleSyrupDTOs = new ArrayList<>();
+        for (MapleSyrup syrup : mapleSyrup) {
+            mapleSyrupDTOs.add(entityToDto(syrup));
+        }
+        return mapleSyrupDTOs;
+    }
+
 }

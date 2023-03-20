@@ -37,4 +37,8 @@ public class MapleSyrupService {
 
         return MapleSyrupMapper.entityToDto(syrup);
     }
+
+    public List<MapleSyrupDto> getAll() {
+        return MapleSyrupMapper.listToDto(mapleSyrupRepository.findAll());
+    }
 }
