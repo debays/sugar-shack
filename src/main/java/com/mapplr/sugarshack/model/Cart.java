@@ -5,6 +5,7 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -19,7 +20,7 @@ public class Cart {
     private Boolean deleted;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CartItem> items;
+    private List<CartItem> items = new ArrayList<>();
 
     private ZonedDateTime createdAt;
 
